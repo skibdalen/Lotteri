@@ -460,8 +460,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎰 Kongsberg Vinlotteri</h1>
-            <p class="subtitle">Trekk en og en vinner av en flaske</p>
+            <h1>🎰 SpareBank 1 Lotteri</h1>
+            <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
         </header>
 
         <div class="main-content">
@@ -804,13 +804,17 @@
                 return;
             }
 
-            const sliceAngle = (2 * Math.PI) / participants.length;
+            // Create wheel with lodd (one entry per lodd)
+            const wheel = createLotteryWheel();
+            const sliceAngle = (2 * Math.PI) / wheel.length;
             const colors = ['#005aa4', '#002776', '#00754e', '#f8e9dd', '#dc8000', '#db3335'];
 
-            participants.forEach((p, i) => {
+            // Draw each lodd as a sector
+            wheel.forEach((lottoEntry, i) => {
                 const startAngle = i * sliceAngle + wheelRotation;
                 const endAngle = startAngle + sliceAngle;
 
+                // Draw sector
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
                 ctx.arc(centerX, centerY, radius, startAngle, endAngle);
@@ -822,6 +826,7 @@
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
+                // Draw text
                 const textAngle = startAngle + sliceAngle / 2;
                 const textX = centerX + Math.cos(textAngle) * (radius * 0.7);
                 const textY = centerY + Math.sin(textAngle) * (radius * 0.7);
@@ -829,14 +834,15 @@
                 ctx.save();
                 ctx.translate(textX, textY);
                 ctx.rotate(textAngle + Math.PI / 2);
-                ctx.font = 'bold 12px "Source Sans 3"';
+                ctx.font = 'bold 11px "Source Sans 3"';
                 ctx.fillStyle = 'white';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
-                ctx.fillText(escapeHtml(p.name), 0, -10);
+                ctx.fillText(escapeHtml(lottoEntry.name), 0, -10);
                 ctx.restore();
             });
 
+            // Draw center circle
             ctx.beginPath();
             ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
             ctx.fillStyle = 'white';
@@ -891,12 +897,15 @@
             const btn = document.querySelector('#controlButtonsActive .button.primary');
             if (btn) btn.disabled = true;
 
-            // Draw random index
+            // Draw random index from available wheel
             const idx = Math.floor(Math.random() * wheel.length);
             const winner = wheel[idx];
+            
+            // Find which participant index this winner is
+            const winnerParticipantIndex = participants.findIndex(p => p.name === winner.name);
 
-            // Animate wheel - callback when done
-            animateSpin(winner, () => {
+            // Animate wheel to show this winner at top
+            animateSpinToWinner(winnerParticipantIndex, () => {
                 // Only add winner AFTER animation is complete
                 currentDrawSession.drawsCompleted++;
                 currentDrawSession.winners.push({
@@ -922,23 +931,52 @@
             });
         }
 
-        function animateSpin(winner, callback) {
+        function animateSpinToWinner(winnerParticipantIndex, callback) {
             const duration = 2000;
             const startTime = Date.now();
-            const targetRotation = Math.random() * 360 + 720;
+            
+            // Create wheel to find all indices for this winner
+            const wheel = createLotteryWheel();
+            
+            // Find all indices of this winner in the wheel
+            const winnerIndices = [];
+            participants.forEach((p, pIdx) => {
+                if (pIdx === winnerParticipantIndex) {
+                    wheel.forEach((entry, wIdx) => {
+                        if (entry.name === p.name) {
+                            winnerIndices.push(wIdx);
+                        }
+                    });
+                }
+            });
+            
+            // Pick a random lodd of this winner
+            const selectedLodIndex = winnerIndices[Math.floor(Math.random() * winnerIndices.length)];
+            
+            // Calculate target rotation to place this lodd at top
+            // Each lodd takes up 360/wheel.length degrees
+            const sliceAngle = 360 / wheel.length;
+            const baseRotation = 720; // 2 full rotations minimum
+            
+            // The center of the lodd sector is at (selectedLodIndex + 0.5) * sliceAngle
+            // We want to rotate so the center is at the top (0 degrees)
+            // wheelRotation should be: 360 - ((selectedLodIndex + 0.5) * sliceAngle)
+            const lodCenter = (selectedLodIndex + 0.5) * sliceAngle;
+            const targetRotationDegrees = baseRotation + (360 - lodCenter);
 
             function animate() {
                 const elapsed = Date.now() - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 const easeProgress = 1 - Math.pow(1 - progress, 3);
                 
-                wheelRotation = (targetRotation * easeProgress) * (Math.PI / 180);
+                wheelRotation = (targetRotationDegrees * easeProgress) * (Math.PI / 180);
                 drawWheel();
 
                 if (progress < 1) {
                     requestAnimationFrame(animate);
                 } else {
-                    // Animation complete
+                    // Animation complete - final draw to show exact position
+                    wheelRotation = (targetRotationDegrees % 360) * (Math.PI / 180);
                     drawWheel();
                     if (callback) callback();
                 }
