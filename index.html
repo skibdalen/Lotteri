@@ -536,8 +536,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎰 Vinlotteri i Kongsberg</h1>
-            <p class="subtitle">Trekk vinnere av dagens vin</p>
+            <h1>🎰 SpareBank 1 Lotteri</h1>
+            <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
         </header>
 
         <div class="main-content">
@@ -1018,28 +1018,33 @@
                 return;
             }
 
-            // Fjern alle lodd fra personer som har vunnet 2 ganger allerede
-            let availableWheel = currentDrawSession.availableWheel;
-            
+            // Sjekk hvilke personer som har vunnet 2 ganger og fjern deres lodd
+            const winCounts = {};
             currentDrawSession.winners.forEach(winnerRecord => {
-                // Tell hvor mange ganger denne personen har vunnet
-                const winCount = currentDrawSession.winners.filter(w => w.name === winnerRecord.name).length;
-                
-                // Hvis vunnet 2 ganger, fjern alle deres lodd
-                if (winCount >= 2) {
-                    availableWheel = availableWheel.filter(w => w.name !== winnerRecord.name);
+                if (!winCounts[winnerRecord.name]) {
+                    winCounts[winnerRecord.name] = 0;
+                }
+                winCounts[winnerRecord.name]++;
+            });
+
+            // Start med alle tilgjengelige lodd
+            let workingWheel = currentDrawSession.availableWheel.slice();
+            
+            // Fjern ALLE lodd for personer som har vunnet 2 ganger
+            Object.keys(winCounts).forEach(name => {
+                if (winCounts[name] >= 2) {
+                    workingWheel = workingWheel.filter(w => w.name !== name);
                 }
             });
 
-            if (availableWheel.length === 0) {
-                showMessage('drawMessage', 'Ikke nok deltakere for flere trekninger (noen har vunnet 2 ganger)', 'error');
+            if (workingWheel.length === 0) {
+                showMessage('drawMessage', 'Ikke nok deltakere for flere trekninger', 'error');
                 return;
             }
 
-            // Draw random index from available wheel
-            // Dette sikrer korrekt sannsynlighet - hver lodd har like stor sjanse
-            const idx = Math.floor(Math.random() * availableWheel.length);
-            const winner = availableWheel[idx];
+            // Draw random index - hver lodd har lik sjanse
+            const idx = Math.floor(Math.random() * workingWheel.length);
+            const winner = workingWheel[idx];
             
             // Find which participant index this winner is
             const winnerParticipantIndex = participants.findIndex(p => p.name === winner.name);
@@ -1058,8 +1063,9 @@
                     tickets: participants.find(p => p.name === winner.name)?.tickets || 1
                 });
 
-                // Oppdater availableWheel - fjern alle lodd for denne personen
-                currentDrawSession.availableWheel = currentDrawSession.availableWheel.filter(w => w.name !== winner.name);
+                // VIKTIG: Fjern IKKE lodd etter første seier
+                // Loddene fjernes først når noen har vunnet 2 ganger (sjekkes på neste trekning)
+                // availableWheel blir samme hele tiden til noen vinner 2. gang
 
                 // Update UI
                 updateDrawStatus();
