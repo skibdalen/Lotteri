@@ -192,9 +192,23 @@
             font-size: 14px;
         }
 
+        .participant-item.disabled {
+            opacity: 0.6;
+            background: #f0f0f0;
+        }
+
         .participant-name {
             font-weight: 600;
             color: var(--ffe-farge-fjell);
+        }
+
+        .participant-probability {
+            text-align: center;
+            min-width: 60px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            background: var(--ffe-farge-sand);
+            font-weight: 600;
         }
 
         .participant-tickets {
@@ -536,8 +550,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎰 Vinlotteri i Kongsberg</h1>
-            <p class="subtitle">Trekk dagens vinnere av vin</p>
+            <h1>🎰 SpareBank 1 Lotteri</h1>
+            <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
         </header>
 
         <div class="main-content">
@@ -826,6 +840,32 @@
             }
         }
 
+        // Beregn vinnersjanse for en deltaker i %
+        function calculateWinProbability(participantName) {
+            // Hvis ikke i draw session, bruker hele wheel
+            if (!currentDrawSession) {
+                const wheel = createLotteryWheel();
+                const count = wheel.filter(w => w.name === participantName).length;
+                const total = wheel.length;
+                if (total === 0) return "0.0";
+                return ((count / total) * 100).toFixed(1);
+            }
+            
+            // I draw session, sjekk om personen har vunnet 2 ganger
+            const winCount = currentDrawSession.winners.filter(w => w.name === participantName).length;
+            if (winCount >= 2) {
+                return "0.0"; // Utestengt
+            }
+            
+            // Beregn sjanse basert på gjenværende lodd
+            const availableWheel = currentDrawSession.availableWheel;
+            const count = availableWheel.filter(w => w.name === participantName).length;
+            const total = availableWheel.length;
+            
+            if (total === 0) return "0.0";
+            return ((count / total) * 100).toFixed(1);
+        }
+
         function renderParticipants() {
             const list = document.getElementById('participantsList');
             
@@ -834,15 +874,24 @@
                 return;
             }
 
-            list.innerHTML = participants.map((p, i) => `
-                <div class="participant-item">
-                    <div>
-                        <div class="participant-name">${escapeHtml(p.name)}</div>
-                        <div style="font-size: 12px; color: #666;">${escapeHtml(p.email || 'Ingen e-post')}</div>
+            list.innerHTML = participants.map((p, i) => {
+                const probability = calculateWinProbability(p.name);
+                const winCount = currentDrawSession ? currentDrawSession.winners.filter(w => w.name === p.name).length : 0;
+                const isDisqualified = winCount >= 2;
+                
+                return `
+                    <div class="participant-item${isDisqualified ? ' disabled' : ''}">
+                        <div>
+                            <div class="participant-name">${escapeHtml(p.name)}</div>
+                            <div style="font-size: 12px; color: #666;">${escapeHtml(p.email || 'Ingen e-post')}</div>
+                        </div>
+                        <div class="participant-probability">
+                            <div style="font-weight: 600; font-size: 16px; color: var(--ffe-farge-fjell);">${probability}%</div>
+                            ${isDisqualified ? '<div style="font-size: 11px; color: #999;">Utestengt</div>' : ''}
+                        </div>
                     </div>
-                    <div class="participant-tickets">${p.tickets} lodd</div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function clearAllParticipants() {
@@ -1080,6 +1129,7 @@
         function updateDrawStatus() {
             document.getElementById('drawProgress').textContent = currentDrawSession.drawsCompleted;
             document.getElementById('drawTotal').textContent = currentDrawSession.targetDraws;
+            renderParticipants();  // Oppdater sannsynligheter
             renderWinners();
         }
 
