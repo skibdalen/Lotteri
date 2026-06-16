@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpareBank 1 Lotteri</title>
+    
+    <!-- SheetJS for Excel handling -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <!-- FileSaver for download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --ffe-farge-fjell: #002776;
+            --ffe-farge-vann: #005aa4;
+            --ffe-farge-sand: #f8e9dd;
+            --ffe-farge-skog: #00754e;
+            --ffe-farge-baer: #db3335;
+            --ffe-farge-sol: #dc8000;
+            --ffe-farge-koksgraa: #323232;
+            --ffe-color-background-page: #f4f7fa;
+            --radius-md: 4px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans 3', sans-serif;
+            background: var(--ffe-color-background-page);
+            color: var(--ffe-farge-koksgraa);
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: var(--radius-md);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            color: var(--ffe-farge-fjell);
+            font-size: 36px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1fr;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h2 {
+            color: var(--ffe-farge-fjell);
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: var(--ffe-farge-koksgraa);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d0d5dd;
+            border-radius: var(--radius-md);
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 14px;
+            transition: border-color 200ms ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--ffe-farge-vann);
+            box-shadow: 0 0 0 3px rgba(0, 90, 164, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .button {
+            background: var(--ffe-farge-vann);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 200ms ease;
+            font-family: 'Source Sans 3', sans-serif;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .button:hover:not(:disabled) {
+            background: #00437a;
+        }
+
+        .button.secondary {
+            background: white;
+            color: var(--ffe-farge-vann);
+            border: 1px solid var(--ffe-farge-vann);
+        }
+
+        .button.secondary:hover:not(:disabled) {
+            background: #f8fafc;
+        }
+
+        .button.primary {
+            background: var(--ffe-farge-fjell);
+        }
+
+        .button.primary:hover:not(:disabled) {
+            background: #001a47;
+        }
+
+        .button.success {
+            background: var(--ffe-farge-skog);
+        }
+
+        .button.success:hover:not(:disabled) {
+            background: #005a3a;
+        }
+
+        .button.danger {
+            background: var(--ffe-farge-baer);
+        }
+
+        .button.danger:hover:not(:disabled) {
+            background: #b82b2d;
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .participants-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .participant-item {
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .participant-name {
+            font-weight: 600;
+            color: var(--ffe-farge-fjell);
+        }
+
+        .participant-tickets {
+            background: var(--ffe-farge-sand);
+            color: var(--ffe-farge-fjell);
+            padding: 4px 8px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .wheel-container {
+            text-align: center;
+            position: relative;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid var(--ffe-farge-fjell);
+            z-index: 10;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .controls input {
+            width: 100px;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .control-buttons .button {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .draw-status {
+            background: #f0f4f8;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        .draw-status-text {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .draw-progress {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--ffe-farge-vann);
+        }
+
+        .winners-section {
+            background: var(--ffe-farge-skog);
+            color: white;
+            padding: 24px;
+            border-radius: var(--radius-md);
+            margin-top: 30px;
+        }
+
+        .winners-section h3 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .winner-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .winner-position {
+            font-weight: 700;
+            font-size: 18px;
+            min-width: 40px;
+        }
+
+        .winner-info {
+            text-align: left;
+            flex: 1;
+            margin-left: 16px;
+        }
+
+        .winner-name {
+            font-weight: 600;
+        }
+
+        .winner-email {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .empty-state {
+            color: #999;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .error {
+            color: var(--ffe-farge-baer);
+            background: #fff5f5;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            margin: 12px 0;
+            border-left: 4px solid var(--ffe-farge-baer);
+        }
+
+        .success {
+            color: var(--ffe-farge-skog);
+            background: #f0fdf4;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            margin: 12px 0;
+            border-left: 4px solid var(--ffe-farge-skog);
+        }
+
+        .info {
+            color: var(--ffe-farge-vann);
+            background: #f0f7ff;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            margin: 12px 0;
+            border-left: 4px solid var(--ffe-farge-vann);
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #d0d5dd;
+            background: white;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            color: var(--ffe-farge-koksgraa);
+            transition: all 200ms ease;
+        }
+
+        .tab-button.active {
+            background: var(--ffe-farge-vann);
+            color: white;
+            border-color: var(--ffe-farge-vann);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .history-entry {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            border-left: 4px solid var(--ffe-farge-vann);
+        }
+
+        .history-date {
+            font-weight: 600;
+            color: var(--ffe-farge-fjell);
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .history-winners {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .stat-item {
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-name {
+            font-weight: 600;
+            color: var(--ffe-farge-fjell);
+        }
+
+        .stat-wins {
+            background: var(--ffe-farge-sand);
+            padding: 4px 8px;
+            border-radius: 9999px;
+            font-weight: 700;
+            color: var(--ffe-farge-fjell);
+        }
+
+        .message {
+            margin: 16px 0;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            border: 3px solid rgba(0, 90, 164, 0.1);
+            border-top: 3px solid var(--ffe-farge-vann);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎰 SpareBank 1 Lotteri</h1>
+            <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Venstre: Deltaker-håndtering -->
+            <div class="card">
+                <h2>Deltakere</h2>
+                
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="switchTab('add-manual', event)">Legg til</button>
+                    <button class="tab-button" onclick="switchTab('import-excel', event)">Importer</button>
+                </div>
+
+                <div id="add-manual" class="tab-content active">
+                    <div class="form-group">
+                        <label for="name">Navn *</label>
+                        <input type="text" id="name" placeholder="Navn på deltaker">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">E-post</label>
+                        <input type="email" id="email" placeholder="epost@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="tickets">Antall lodd *</label>
+                        <input type="number" id="tickets" min="1" value="1">
+                    </div>
+                    <button class="button primary" onclick="addParticipant()">Legg til deltaker</button>
+                </div>
+
+                <div id="import-excel" class="tab-content">
+                    <div class="form-group">
+                        <label for="excelFile">Last opp Excel-fil</label>
+                        <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+                    </div>
+                    <button class="button secondary" onclick="importExcel()">Importer fra fil</button>
+                    <p style="margin-top: 12px; font-size: 12px; color: #666;">
+                        Excel-fil må ha kolonnene: Navn, E-post, Antall lodd
+                    </p>
+                </div>
+
+                <h3 style="margin-top: 24px; margin-bottom: 12px;">Nåværende deltakere</h3>
+                <div class="participants-list" id="participantsList">
+                    <p class="empty-state">Ingen deltakere ennå</p>
+                </div>
+
+                <button class="button secondary" style="margin-top: 16px;" onclick="clearAllParticipants()">Slett alle</button>
+                <button class="button secondary" style="margin-top: 8px;" onclick="exportParticipants()">📥 Eksport deltakere</button>
+            </div>
+
+            <!-- Senter: Lotterihjul -->
+            <div class="card">
+                <h2>Lotterihjul</h2>
+                <div class="wheel-container">
+                    <div class="wheel-pointer"></div>
+                    <canvas id="wheelCanvas" width="400" height="400"></canvas>
+                </div>
+
+                <div class="controls">
+                    <input type="number" id="numDraws" min="1" value="1" placeholder="Ant. gevinster">
+                </div>
+
+                <div id="drawMessage" class="message"></div>
+
+                <div class="draw-status" id="drawStatus" style="display: none;">
+                    <div class="draw-status-text">Trekningsstatus</div>
+                    <div class="draw-progress"><span id="drawProgress">0</span> / <span id="drawTotal">1</span></div>
+                </div>
+
+                <div class="control-buttons" id="controlButtonsReady">
+                    <button class="button primary" onclick="startDraw()">Start trekningssesjon</button>
+                </div>
+
+                <div class="control-buttons" id="controlButtonsActive" style="display: none;">
+                    <button class="button primary" onclick="drawNextWinner()">Trekk neste vinner</button>
+                    <button class="button secondary" onclick="cancelDraw()">Avbryt</button>
+                </div>
+
+                <div class="control-buttons" id="controlButtonsComplete" style="display: none;">
+                    <button class="button success" onclick="saveDraw()">💾 Lagre vinnere</button>
+                    <button class="button secondary" onclick="startNewDraw()">Ny trekningssesjon</button>
+                </div>
+            </div>
+
+            <!-- Høyre: Vinnerliste -->
+            <div class="card">
+                <h2>Vinnere</h2>
+                <div id="winnersList" style="min-height: 400px;">
+                    <p class="empty-state">Ingen vinnere ennå</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historikk -->
+        <div class="card">
+            <h2>Trekkings-historikk</h2>
+            
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('history-list', event)">Historikk</button>
+                <button class="tab-button" onclick="switchTab('history-stats', event)">Statistikk</button>
+            </div>
+
+            <div id="history-list" class="tab-content active">
+                <div id="historyContainer" style="max-height: 600px; overflow-y: auto;">
+                    <p class="empty-state">Ingen trekninger lagret ennå</p>
+                </div>
+                <button class="button secondary" style="margin-top: 16px; width: 100%;" onclick="downloadHistory()">
+                    📥 Last ned historikk (Excel)
+                </button>
+            </div>
+
+            <div id="history-stats" class="tab-content">
+                <div id="historyStatsContainer" style="max-height: 600px; overflow-y: auto;">
+                    <p class="empty-state">Ingen data ennå</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================
+        // DATA MANAGEMENT
+        // ========================
+
+        let participants = [];
+        let currentDrawSession = null;
+        let wheelRotation = 0;
+
+        // LocalStorage keys
+        const STORAGE_PARTICIPANTS = 'lottery_participants';
+        const STORAGE_HISTORY = 'lottery_history';
+
+        // Load participants from localStorage
+        function loadParticipants() {
+            const stored = localStorage.getItem(STORAGE_PARTICIPANTS);
+            participants = stored ? JSON.parse(stored) : [];
+            renderParticipants();
+            drawWheel();
+        }
+
+        // Save participants to localStorage
+        function saveParticipants() {
+            localStorage.setItem(STORAGE_PARTICIPANTS, JSON.stringify(participants));
+        }
+
+        // Load history from localStorage
+        function loadHistory() {
+            const stored = localStorage.getItem(STORAGE_HISTORY);
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        // Save history to localStorage
+        function saveHistory(history) {
+            localStorage.setItem(STORAGE_HISTORY, JSON.stringify(history));
+        }
+
+        // ========================
+        // PARTICIPANT MANAGEMENT
+        // ========================
+
+        function addParticipant() {
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const tickets = parseInt(document.getElementById('tickets').value) || 1;
+
+            if (!name) {
+                showMessage('drawMessage', 'Skriv inn navn på deltaker', 'error');
+                return;
+            }
+
+            if (tickets < 1) {
+                showMessage('drawMessage', 'Antall lodd må være minst 1', 'error');
+                return;
+            }
+
+            participants.push({ name, email, tickets });
+            saveParticipants();
+            
+            document.getElementById('name').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('tickets').value = '1';
+            
+            loadParticipants();
+            showMessage('drawMessage', '✓ Deltaker lagt til!', 'success');
+        }
+
+        function importExcel() {
+            const file = document.getElementById('excelFile').files[0];
+            if (!file) {
+                showMessage('drawMessage', 'Velg en fil først', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    participants = [];
+                    json.forEach(row => {
+                        const name = row['Navn'] || row['Name'] || row['navn'] || '';
+                        const email = row['E-post'] || row['Email'] || row['email'] || '';
+                        const tickets = parseInt(row['Antall lodd'] || row['Tickets'] || row['antall lodd'] || 1) || 1;
+
+                        if (name && tickets > 0) {
+                            participants.push({ name: name.toString(), email: email.toString(), tickets });
+                        }
+                    });
+
+                    saveParticipants();
+                    loadParticipants();
+                    document.getElementById('excelFile').value = '';
+                    showMessage('drawMessage', `✓ Importert ${participants.length} deltakere!`, 'success');
+                } catch (error) {
+                    showMessage('drawMessage', 'Feil ved lesing av Excel: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportParticipants() {
+            if (participants.length === 0) {
+                showMessage('drawMessage', 'Ingen deltakere å eksportere', 'error');
+                return;
+            }
+
+            try {
+                const ws = XLSX.utils.json_to_sheet(
+                    participants.map(p => ({
+                        'Navn': p.name,
+                        'E-post': p.email,
+                        'Antall lodd': p.tickets
+                    }))
+                );
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Deltakere');
+                XLSX.writeFile(wb, 'lotteri_deltakere.xlsx');
+                showMessage('drawMessage', '✓ Deltakere eksportert!', 'success');
+            } catch (error) {
+                showMessage('drawMessage', 'Feil ved eksport: ' + error.message, 'error');
+            }
+        }
+
+        function renderParticipants() {
+            const list = document.getElementById('participantsList');
+            
+            if (participants.length === 0) {
+                list.innerHTML = '<p class="empty-state">Ingen deltakere ennå</p>';
+                return;
+            }
+
+            list.innerHTML = participants.map((p, i) => `
+                <div class="participant-item">
+                    <div>
+                        <div class="participant-name">${escapeHtml(p.name)}</div>
+                        <div style="font-size: 12px; color: #666;">${escapeHtml(p.email || 'Ingen e-post')}</div>
+                    </div>
+                    <div class="participant-tickets">${p.tickets} lodd</div>
+                </div>
+            `).join('');
+        }
+
+        function clearAllParticipants() {
+            if (confirm('Slett alle deltakere?')) {
+                participants = [];
+                saveParticipants();
+                loadParticipants();
+                showMessage('drawMessage', '✓ Alle deltakere slettet', 'success');
+            }
+        }
+
+        // ========================
+        // LOTTERY MECHANICS
+        // ========================
+
+        function createLotteryWheel() {
+            const wheel = [];
+            participants.forEach(p => {
+                for (let i = 0; i < p.tickets; i++) {
+                    wheel.push({ name: p.name, email: p.email });
+                }
+            });
+            return wheel;
+        }
+
+        function drawWheel() {
+            const canvas = document.getElementById('wheelCanvas');
+            const ctx = canvas.getContext('2d');
+            const radius = canvas.width / 2 - 10;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (participants.length === 0) {
+                ctx.font = '16px "Source Sans 3"';
+                ctx.fillStyle = '#999';
+                ctx.textAlign = 'center';
+                ctx.fillText('Legg til deltakere', centerX, centerY);
+                return;
+            }
+
+            const sliceAngle = (2 * Math.PI) / participants.length;
+            const colors = ['#005aa4', '#002776', '#00754e', '#f8e9dd', '#dc8000', '#db3335'];
+
+            participants.forEach((p, i) => {
+                const startAngle = i * sliceAngle + wheelRotation;
+                const endAngle = startAngle + sliceAngle;
+
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                const textAngle = startAngle + sliceAngle / 2;
+                const textX = centerX + Math.cos(textAngle) * (radius * 0.7);
+                const textY = centerY + Math.sin(textAngle) * (radius * 0.7);
+
+                ctx.save();
+                ctx.translate(textX, textY);
+                ctx.rotate(textAngle + Math.PI / 2);
+                ctx.font = 'bold 12px "Source Sans 3"';
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(escapeHtml(p.name), 0, -10);
+                ctx.restore();
+            });
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            ctx.strokeStyle = '#005aa4';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        // ========================
+        // DRAW SESSION (TREKNING)
+        // ========================
+
+        function startDraw() {
+            const numDraws = parseInt(document.getElementById('numDraws').value) || 1;
+            
+            if (participants.length === 0) {
+                showMessage('drawMessage', 'Legg til minst en deltaker', 'error');
+                return;
+            }
+
+            const wheel = createLotteryWheel();
+
+            if (wheel.length < numDraws) {
+                showMessage('drawMessage', `Ikke nok lodd. Totalt ${wheel.length} lodd, men prøvde å trekke ${numDraws}.`, 'error');
+                return;
+            }
+
+            currentDrawSession = {
+                targetDraws: numDraws,
+                drawsCompleted: 0,
+                winners: [],
+                availableWheel: wheel.slice()
+            };
+
+            updateDrawUI();
+            showMessage('drawMessage', `✓ Trekningssesjon startet. Totalt ${numDraws} gevinst(er) å trekke.`, 'info');
+        }
+
+        function drawNextWinner() {
+            if (!currentDrawSession || currentDrawSession.drawsCompleted >= currentDrawSession.targetDraws) {
+                return;
+            }
+
+            const wheel = currentDrawSession.availableWheel;
+            if (wheel.length === 0) {
+                showMessage('drawMessage', 'Ikke nok deltakere for flere treninger', 'error');
+                return;
+            }
+
+            // Draw random index
+            const idx = Math.floor(Math.random() * wheel.length);
+            const winner = wheel[idx];
+
+            currentDrawSession.drawsCompleted++;
+            currentDrawSession.winners.push({
+                position: currentDrawSession.drawsCompleted,
+                name: winner.name,
+                email: winner.email,
+                tickets: participants.find(p => p.name === winner.name)?.tickets || 1
+            });
+
+            // Remove all tickets for this person
+            currentDrawSession.availableWheel = wheel.filter(w => w.name !== winner.name);
+
+            // Animate wheel
+            animateSpin(winner);
+
+            // Update UI
+            updateDrawStatus();
+
+            if (currentDrawSession.drawsCompleted >= currentDrawSession.targetDraws) {
+                updateDrawUI('complete');
+                showMessage('drawMessage', `✅ Alle ${currentDrawSession.targetDraws} gevinst(er) trukket!`, 'success');
+            }
+        }
+
+        function animateSpin(winner) {
+            const duration = 2000;
+            const startTime = Date.now();
+            const targetRotation = Math.random() * 360 + 720;
+
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                wheelRotation = (targetRotation * easeProgress) * (Math.PI / 180);
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            }
+
+            animate();
+        }
+
+        function updateDrawStatus() {
+            document.getElementById('drawProgress').textContent = currentDrawSession.drawsCompleted;
+            document.getElementById('drawTotal').textContent = currentDrawSession.targetDraws;
+            renderWinners();
+        }
+
+        function renderWinners() {
+            const list = document.getElementById('winnersList');
+            
+            if (!currentDrawSession || currentDrawSession.winners.length === 0) {
+                list.innerHTML = '<p class="empty-state">Ingen vinnere</p>';
+                return;
+            }
+
+            list.innerHTML = '<div class="winners-section"><h3>🎉 Aktuelle vinnere:</h3>' +
+                currentDrawSession.winners.map(w => `
+                    <div class="winner-item">
+                        <span class="winner-position">Pris ${w.position}</span>
+                        <div class="winner-info">
+                            <div class="winner-name">${escapeHtml(w.name)}</div>
+                            <div class="winner-email">${escapeHtml(w.email || 'Ingen e-post')}</div>
+                        </div>
+                    </div>
+                `).join('') + '</div>';
+        }
+
+        function updateDrawUI(state = 'active') {
+            const statusEl = document.getElementById('drawStatus');
+            const readyBtns = document.getElementById('controlButtonsReady');
+            const activeBtns = document.getElementById('controlButtonsActive');
+            const completeBtns = document.getElementById('controlButtonsComplete');
+
+            if (state === 'active') {
+                statusEl.style.display = 'block';
+                readyBtns.style.display = 'none';
+                activeBtns.style.display = 'flex';
+                completeBtns.style.display = 'none';
+            } else if (state === 'complete') {
+                statusEl.style.display = 'block';
+                readyBtns.style.display = 'none';
+                activeBtns.style.display = 'none';
+                completeBtns.style.display = 'flex';
+            } else {
+                statusEl.style.display = 'none';
+                readyBtns.style.display = 'flex';
+                activeBtns.style.display = 'none';
+                completeBtns.style.display = 'none';
+                wheelRotation = 0;
+                drawWheel();
+            }
+        }
+
+        function cancelDraw() {
+            if (confirm('Avbryt trekningssesjon? Vinnere vil ikke bli lagret.')) {
+                currentDrawSession = null;
+                updateDrawUI('idle');
+                document.getElementById('winnersList').innerHTML = '<p class="empty-state">Ingen vinnere</p>';
+                showMessage('drawMessage', 'Trekningssesjon avbrutt', 'info');
+            }
+        }
+
+        function saveDraw() {
+            if (!currentDrawSession || currentDrawSession.winners.length === 0) {
+                showMessage('drawMessage', 'Ingen vinnere å lagre', 'error');
+                return;
+            }
+
+            const history = loadHistory();
+            history.push({
+                date: new Date().toLocaleString('nb-NO'),
+                drawId: new Date().getTime(),
+                winners: currentDrawSession.winners
+            });
+
+            saveHistory(history);
+            
+            currentDrawSession = null;
+            updateDrawUI('idle');
+            document.getElementById('winnersList').innerHTML = '<p class="empty-state">Ingen vinnere</p>';
+            loadHistory(); // Refresh history display
+            showMessage('drawMessage', `✅ Lagret ${history[history.length - 1].winners.length} vinner(e) til historikk`, 'success');
+        }
+
+        function startNewDraw() {
+            currentDrawSession = null;
+            updateDrawUI('idle');
+            document.getElementById('winnersList').innerHTML = '<p class="empty-state">Ingen vinnere</p>';
+            document.getElementById('drawMessage').innerHTML = '';
+        }
+
+        // ========================
+        // HISTORY & STATISTICS
+        // ========================
+
+        function renderHistory() {
+            const history = loadHistory();
+            const container = document.getElementById('historyContainer');
+            
+            if (history.length === 0) {
+                container.innerHTML = '<p class="empty-state">Ingen trekninger lagret ennå</p>';
+                return;
+            }
+
+            container.innerHTML = history.reverse().map(entry => `
+                <div class="history-entry">
+                    <div class="history-date">📅 ${escapeHtml(entry.date)}</div>
+                    <div class="history-winners">
+                        ${entry.winners.map((w, i) => `
+                            <div style="padding: 4px 0;">Pris ${i + 1}: <strong>${escapeHtml(w.name)}</strong> (${w.tickets} lodd)</div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderHistoryStats() {
+            const history = loadHistory();
+            const container = document.getElementById('historyStatsContainer');
+            
+            // Calculate stats
+            const stats = {};
+            history.forEach(entry => {
+                entry.winners.forEach(winner => {
+                    if (!stats[winner.name]) {
+                        stats[winner.name] = { wins: 0, emails: [] };
+                    }
+                    stats[winner.name].wins++;
+                    if (winner.email && !stats[winner.name].emails.includes(winner.email)) {
+                        stats[winner.name].emails.push(winner.email);
+                    }
+                });
+            });
+
+            if (Object.keys(stats).length === 0) {
+                container.innerHTML = '<p class="empty-state">Ingen statistikk ennå</p>';
+                return;
+            }
+
+            const sorted = Object.entries(stats).sort((a, b) => b[1].wins - a[1].wins);
+
+            container.innerHTML = sorted.map(([name, data]) => `
+                <div class="stat-item">
+                    <div>
+                        <div class="stat-name">${escapeHtml(name)}</div>
+                        <div style="font-size: 12px; color: #999;">${escapeHtml(data.emails.join(', ') || 'Ingen e-post')}</div>
+                    </div>
+                    <div class="stat-wins">${data.wins} gevinst(er)</div>
+                </div>
+            `).join('');
+        }
+
+        function downloadHistory() {
+            const history = loadHistory();
+            
+            if (history.length === 0) {
+                showMessage('drawMessage', 'Ingen historikk å laste ned', 'error');
+                return;
+            }
+
+            try {
+                const data = [];
+                history.forEach(entry => {
+                    entry.winners.forEach((winner, idx) => {
+                        data.push({
+                            'Dato': entry.date,
+                            'Prisnummer': idx + 1,
+                            'Vinner': winner.name,
+                            'E-post': winner.email,
+                            'Antall lodd': winner.tickets
+                        });
+                    });
+                });
+
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Historikk');
+                XLSX.writeFile(wb, 'lotteri_historikk.xlsx');
+                showMessage('drawMessage', '✓ Historikk eksportert!', 'success');
+            } catch (error) {
+                showMessage('drawMessage', 'Feil ved eksport: ' + error.message, 'error');
+            }
+        }
+
+        // ========================
+        // UI HELPERS
+        // ========================
+
+        function switchTab(tabName, event) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'history-list') renderHistory();
+            if (tabName === 'history-stats') renderHistoryStats();
+        }
+
+        function showMessage(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="${type}">${escapeHtml(message)}</div>`;
+            setTimeout(() => { 
+                if (el.innerHTML.includes(type)) el.innerHTML = ''; 
+            }, 5000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========================
+        // INITIALIZATION
+        // ========================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadParticipants();
+            renderHistory();
+            renderHistoryStats();
+        });
+    </script>
+</body>
+</html>
