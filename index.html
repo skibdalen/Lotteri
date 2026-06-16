@@ -156,6 +156,7 @@
 
         .button.success {
             background: var(--ffe-farge-skog);
+            color: white;
         }
 
         .button.success:hover:not(:disabled) {
@@ -535,8 +536,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎰 Vinlotteri i Kongsberg</h1>
-            <p class="subtitle">Trekk dagens heldige vinnere</p>
+            <h1>🎰 SpareBank 1 Lotteri</h1>
+            <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
         </header>
 
         <div class="main-content">
@@ -872,29 +873,22 @@
         // ========================
 
         function initSlotMachine() {
-            let wheel = createLotteryWheel();
-            
-            // Bland navnene så de ikke står sammen
-            for (let i = wheel.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [wheel[i], wheel[j]] = [wheel[j], wheel[i]];
-            }
-            
-            // Lagre den blandede rekkefølgen for senere bruk
-            currentShuffledWheel = wheel;
-            
             const slotColumn = document.getElementById('slotColumn');
             
             if (slotColumn) {
                 const itemsDiv = document.createElement('div');
                 itemsDiv.className = 'slot-items';
                 
-                // Repeat participants 3 times for visual effect
-                for (let repeat = 0; repeat < 3; repeat++) {
-                    wheel.forEach(entry => {
+                // Opprett fargeelektroder for spinning
+                const colors = ['#005aa4', '#002776', '#00754e', '#f8e9dd', '#dc8000', '#db3335', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'];
+                
+                // Gjenta farger flere ganger for spinning-effekt
+                for (let repeat = 0; repeat < 5; repeat++) {
+                    colors.forEach(color => {
                         const item = document.createElement('div');
                         item.className = 'slot-item';
-                        item.textContent = entry.name;
+                        item.style.backgroundColor = color;
+                        item.innerHTML = '';
                         itemsDiv.appendChild(item);
                     });
                 }
@@ -905,28 +899,24 @@
         }
 
         function spinSlotMachine(winnerParticipantIndex, callback) {
-            // Bruk den lagrede blandede rekkefølgen
-            const wheel = currentShuffledWheel;
+            // Trekk en tilfeldig posisjon for visuell effekt
+            const colors = ['#005aa4', '#002776', '#00754e', '#f8e9dd', '#dc8000', '#db3335', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A'];
             const slotColumn = document.getElementById('slotColumn');
             const itemsDiv = slotColumn.querySelector('.slot-items');
             
-            // Find index of winner in the shuffled wheel
-            const winnerIndices = [];
-            wheel.forEach((entry, idx) => {
-                if (entry.name === participants[winnerParticipantIndex].name) {
-                    winnerIndices.push(idx);
-                }
-            });
+            // Lag fargekolonne hvis den ikke finnes
+            if (!itemsDiv || itemsDiv.children.length === 0) {
+                initSlotMachine();
+            }
             
-            const selectedIndex = winnerIndices[Math.floor(Math.random() * winnerIndices.length)];
             const winnerName = participants[winnerParticipantIndex].name;
             
-            // Calculate final position (center of slot machine)
-            // Each item is 80px high
-            // Slot machine window is 300px, with center visible area at 110-190px
-            // Center of visible area is at 150px
+            // Velg en tilfeldig sluttposisjon for farger
+            const totalColors = colors.length * 5; // 5 repetinger
+            const randomStopIndex = Math.floor(Math.random() * colors.length) + colors.length * 2; // 2-3 repetinger inn
+            
             const itemHeight = 80;
-            const selectedItemCenter = (selectedIndex + 0.5) * itemHeight;
+            const selectedItemCenter = (randomStopIndex + 0.5) * itemHeight;
             const targetScroll = selectedItemCenter - 150;
             
             // Disable button
@@ -984,8 +974,8 @@
                 justify-content: center;
                 font-size: 20px;
                 font-weight: 700;
-                color: var(--ffe-farge-fjell);
-                background: white;
+                color: white;
+                background: var(--ffe-farge-fjell);
             `;
             winnerItem.textContent = escapeHtml(winnerName);
             
@@ -1018,6 +1008,7 @@
                 availableWheel: wheel.slice()
             };
 
+            initSlotMachine();
             updateDrawUI();
             showMessage('drawMessage', `✓ Trekningssesjon startet. Totalt ${numDraws} gevinst(er) å trekke.`, 'info');
         }
@@ -1039,6 +1030,9 @@
             
             // Find which participant index this winner is
             const winnerParticipantIndex = participants.findIndex(p => p.name === winner.name);
+
+            // Initialize farger før spinning
+            initSlotMachine();
 
             // Animate slot machine to show this winner
             spinSlotMachine(winnerParticipantIndex, () => {
