@@ -536,8 +536,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎰 Vinlotteri i Kongsberg</h1>
-            <p class="subtitle">Trekk dagens vinnere av vin</p>
+            <h1>🎰 SpareBank 1 Lotteri</h1>
+            <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
         </header>
 
         <div class="main-content">
@@ -1018,15 +1018,28 @@
                 return;
             }
 
-            const wheel = currentDrawSession.availableWheel;
-            if (wheel.length === 0) {
-                showMessage('drawMessage', 'Ikke nok deltakere for flere trekninger', 'error');
+            // Fjern alle lodd fra personer som har vunnet 2 ganger allerede
+            let availableWheel = currentDrawSession.availableWheel;
+            
+            currentDrawSession.winners.forEach(winnerRecord => {
+                // Tell hvor mange ganger denne personen har vunnet
+                const winCount = currentDrawSession.winners.filter(w => w.name === winnerRecord.name).length;
+                
+                // Hvis vunnet 2 ganger, fjern alle deres lodd
+                if (winCount >= 2) {
+                    availableWheel = availableWheel.filter(w => w.name !== winnerRecord.name);
+                }
+            });
+
+            if (availableWheel.length === 0) {
+                showMessage('drawMessage', 'Ikke nok deltakere for flere trekninger (noen har vunnet 2 ganger)', 'error');
                 return;
             }
 
             // Draw random index from available wheel
-            const idx = Math.floor(Math.random() * wheel.length);
-            const winner = wheel[idx];
+            // Dette sikrer korrekt sannsynlighet - hver lodd har like stor sjanse
+            const idx = Math.floor(Math.random() * availableWheel.length);
+            const winner = availableWheel[idx];
             
             // Find which participant index this winner is
             const winnerParticipantIndex = participants.findIndex(p => p.name === winner.name);
@@ -1045,8 +1058,8 @@
                     tickets: participants.find(p => p.name === winner.name)?.tickets || 1
                 });
 
-                // Remove all tickets for this person
-                currentDrawSession.availableWheel = wheel.filter(w => w.name !== winner.name);
+                // Oppdater availableWheel - fjern alle lodd for denne personen
+                currentDrawSession.availableWheel = currentDrawSession.availableWheel.filter(w => w.name !== winner.name);
 
                 // Update UI
                 updateDrawStatus();
