@@ -550,8 +550,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎰 Vinlotteri i Kongsberg</h1>
-           <p class="subtitle">Trekk vinnere av dagens vin</p>
+            <h1>🎰 SpareBank 1 Lotteri</h1>
+            <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
         </header>
 
         <div class="main-content">
@@ -851,16 +851,33 @@
                 return ((count / total) * 100).toFixed(1);
             }
             
-            // I draw session, sjekk om personen har vunnet 2 ganger
+            // I draw session: sjekk om personen har vunnet 2 ganger
             const winCount = currentDrawSession.winners.filter(w => w.name === participantName).length;
             if (winCount >= 2) {
                 return "0.0"; // Utestengt
             }
             
-            // Beregn sjanse basert på gjenværende lodd
-            const availableWheel = currentDrawSession.availableWheel;
-            const count = availableWheel.filter(w => w.name === participantName).length;
-            const total = availableWheel.length;
+            // Beregn arbeidswheel: alle lodd minus de som er utestengt
+            let workingWheel = currentDrawSession.availableWheel.slice();
+            
+            // Fjern lodd for alle som har vunnet 2 ganger
+            const winCounts = {};
+            currentDrawSession.winners.forEach(winner => {
+                if (!winCounts[winner.name]) {
+                    winCounts[winner.name] = 0;
+                }
+                winCounts[winner.name]++;
+            });
+            
+            Object.keys(winCounts).forEach(name => {
+                if (winCounts[name] >= 2) {
+                    workingWheel = workingWheel.filter(w => w.name !== name);
+                }
+            });
+            
+            // Beregn sannsynlighet basert på arbeidswheel
+            const count = workingWheel.filter(w => w.name === participantName).length;
+            const total = workingWheel.length;
             
             if (total === 0) return "0.0";
             return ((count / total) * 100).toFixed(1);
@@ -1112,9 +1129,15 @@
                     tickets: participants.find(p => p.name === winner.name)?.tickets || 1
                 });
 
-                // VIKTIG: Fjern IKKE lodd etter første seier
-                // Loddene fjernes først når noen har vunnet 2 ganger (sjekkes på neste trekning)
-                // availableWheel blir samme hele tiden til noen vinner 2. gang
+                // Fjern ETT lodd for vinneren (reduserer sjansen deres neste trekning)
+                let removed = false;
+                currentDrawSession.availableWheel = currentDrawSession.availableWheel.filter(w => {
+                    if (!removed && w.name === winner.name) {
+                        removed = true;  // Fjern bare første forekomst
+                        return false;
+                    }
+                    return true;
+                });
 
                 // Update UI
                 updateDrawStatus();
