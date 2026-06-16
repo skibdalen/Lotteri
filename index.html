@@ -234,6 +234,81 @@
             z-index: 10;
         }
 
+        /* Slot Machine Styles */
+        .machine-container {
+            text-align: center;
+            position: relative;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .machine-display {
+            background: linear-gradient(135deg, #001a47 0%, #002776 100%);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.3), 0 8px 16px rgba(0, 0, 0, 0.2);
+            border: 3px solid #FFD700;
+        }
+
+        .slot-machine {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            perspective: 1000px;
+        }
+
+        .slot-column {
+            width: 120px;
+            height: 300px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 2px solid #ddd;
+            position: relative;
+        }
+
+        .slot-column::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 80px;
+            transform: translateY(-50%);
+            border-top: 3px solid var(--ffe-farge-vann);
+            border-bottom: 3px solid var(--ffe-farge-vann);
+            background: rgba(0, 90, 164, 0.05);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .slot-items {
+            display: flex;
+            flex-direction: column;
+            padding: 100px 0;
+            transition: transform 0.1s linear;
+        }
+
+        .slot-item {
+            flex-shrink: 0;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--ffe-farge-koksgraa);
+            background: white;
+            border-bottom: 1px solid #eee;
+            padding: 0 8px;
+            text-align: center;
+            word-wrap: break-word;
+        }
+
         .controls {
             display: flex;
             gap: 12px;
@@ -460,8 +535,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎰 Vinlotteri i Kongsberg</h1>
-            <p class="subtitle">Trekk vinnere for dagens lotteri</p>
+            <h1>🎰 SpareBank 1 Lotteri</h1>
+            <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
         </header>
 
         <div class="main-content">
@@ -512,10 +587,15 @@
 
             <!-- Senter: Lotterihjul -->
             <div class="card">
-                <h2>Lotterihjul</h2>
-                <div class="wheel-container">
-                    <div class="wheel-pointer"></div>
-                    <canvas id="wheelCanvas" width="400" height="400"></canvas>
+                <h2>Lotterimaskin</h2>
+                <div class="machine-container">
+                    <div class="machine-display">
+                        <div class="slot-machine">
+                            <div class="slot-column" id="slotColumn">
+                                <!-- Fylles dynamisk -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="controls">
@@ -586,7 +666,7 @@
 
         let participants = [];
         let currentDrawSession = null;
-        let wheelRotation = 0;
+        let currentShuffledWheel = [];  // Lagre den blandede rekkefølgen
 
         // LocalStorage keys
         const STORAGE_PARTICIPANTS = 'lottery_participants';
@@ -597,7 +677,7 @@
             const stored = localStorage.getItem(STORAGE_PARTICIPANTS);
             participants = stored ? JSON.parse(stored) : [];
             renderParticipants();
-            drawWheel();
+            initSlotMachine();
         }
 
         // Save participants to localStorage
@@ -787,69 +867,129 @@
             return wheel;
         }
 
-        function drawWheel() {
-            const canvas = document.getElementById('wheelCanvas');
-            const ctx = canvas.getContext('2d');
-            const radius = canvas.width / 2 - 10;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
+        // ========================
+        // SLOT MACHINE
+        // ========================
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            if (participants.length === 0) {
-                ctx.font = '16px "Source Sans 3"';
-                ctx.fillStyle = '#999';
-                ctx.textAlign = 'center';
-                ctx.fillText('Legg til deltakere', centerX, centerY);
-                return;
+        function initSlotMachine() {
+            let wheel = createLotteryWheel();
+            
+            // Bland navnene så de ikke står sammen
+            for (let i = wheel.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [wheel[i], wheel[j]] = [wheel[j], wheel[i]];
             }
+            
+            // Lagre den blandede rekkefølgen for senere bruk
+            currentShuffledWheel = wheel;
+            
+            const slotColumn = document.getElementById('slotColumn');
+            
+            if (slotColumn) {
+                const itemsDiv = document.createElement('div');
+                itemsDiv.className = 'slot-items';
+                
+                // Repeat participants 3 times for visual effect
+                for (let repeat = 0; repeat < 3; repeat++) {
+                    wheel.forEach(entry => {
+                        const item = document.createElement('div');
+                        item.className = 'slot-item';
+                        item.textContent = entry.name;
+                        itemsDiv.appendChild(item);
+                    });
+                }
+                
+                slotColumn.innerHTML = '';
+                slotColumn.appendChild(itemsDiv);
+            }
+        }
 
-            // Create wheel with lodd (one entry per lodd)
-            const wheel = createLotteryWheel();
-            const sliceAngle = (2 * Math.PI) / wheel.length;
-            const colors = ['#005aa4', '#002776', '#00754e', '#f8e9dd', '#dc8000', '#db3335'];
-
-            // Draw each lodd as a sector
-            wheel.forEach((lottoEntry, i) => {
-                const startAngle = i * sliceAngle + wheelRotation;
-                const endAngle = startAngle + sliceAngle;
-
-                // Draw sector
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-                ctx.closePath();
-                ctx.fillStyle = colors[i % colors.length];
-                ctx.fill();
-
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-
-                // Draw text
-                const textAngle = startAngle + sliceAngle / 2;
-                const textX = centerX + Math.cos(textAngle) * (radius * 0.7);
-                const textY = centerY + Math.sin(textAngle) * (radius * 0.7);
-
-                ctx.save();
-                ctx.translate(textX, textY);
-                ctx.rotate(textAngle + Math.PI / 2);
-                ctx.font = 'bold 11px "Source Sans 3"';
-                ctx.fillStyle = 'white';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'bottom';
-                ctx.fillText(escapeHtml(lottoEntry.name), 0, -10);
-                ctx.restore();
+        function spinSlotMachine(winnerParticipantIndex, callback) {
+            // Bruk den lagrede blandede rekkefølgen
+            const wheel = currentShuffledWheel;
+            const slotColumn = document.getElementById('slotColumn');
+            const itemsDiv = slotColumn.querySelector('.slot-items');
+            
+            // Find index of winner in the shuffled wheel
+            const winnerIndices = [];
+            wheel.forEach((entry, idx) => {
+                if (entry.name === participants[winnerParticipantIndex].name) {
+                    winnerIndices.push(idx);
+                }
             });
+            
+            const selectedIndex = winnerIndices[Math.floor(Math.random() * winnerIndices.length)];
+            const winnerName = participants[winnerParticipantIndex].name;
+            
+            // Calculate final position (center of slot machine)
+            // Each item is 80px high
+            // Slot machine window is 300px, with center visible area at 110-190px
+            // Center of visible area is at 150px
+            const itemHeight = 80;
+            const selectedItemCenter = (selectedIndex + 0.5) * itemHeight;
+            const targetScroll = selectedItemCenter - 150;
+            
+            // Disable button
+            const btn = document.querySelector('#controlButtonsActive .button.primary');
+            if (btn) btn.disabled = true;
+            
+            // Animate spin
+            const duration = 2000;
+            const startTime = Date.now();
+            let currentScroll = 0;
+            
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Easing: start fast, slow down
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                // Add extra rotation at beginning for visual effect
+                const extraRotation = Math.max(0, (1 - progress) * 2000);
+                currentScroll = targetScroll + extraRotation;
+                
+                itemsDiv.style.transform = `translateY(-${currentScroll}px)`;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Animation complete - show only winner name
+                    showWinnerInSlotMachine(winnerName);
+                    
+                    // Re-enable button and call callback
+                    if (btn) btn.disabled = false;
+                    if (callback) callback();
+                }
+            }
+            
+            animate();
+        }
 
-            // Draw center circle
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
-            ctx.fillStyle = 'white';
-            ctx.fill();
-            ctx.strokeStyle = '#005aa4';
-            ctx.lineWidth = 3;
-            ctx.stroke();
+        function showWinnerInSlotMachine(winnerName) {
+            const slotColumn = document.getElementById('slotColumn');
+            const itemsDiv = slotColumn.querySelector('.slot-items');
+            
+            // Erstatt innholdet med bare vinnernavn
+            itemsDiv.innerHTML = '';
+            itemsDiv.style.transform = 'translateY(0)';
+            
+            // Lag et enkelt element med vinnernavn
+            const winnerItem = document.createElement('div');
+            winnerItem.className = 'slot-item';
+            winnerItem.style.cssText = `
+                height: 80px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                font-weight: 700;
+                color: var(--ffe-farge-fjell);
+                background: white;
+            `;
+            winnerItem.textContent = escapeHtml(winnerName);
+            
+            itemsDiv.appendChild(winnerItem);
         }
 
         // ========================
@@ -893,10 +1033,6 @@
                 return;
             }
 
-            // Disable button during animation
-            const btn = document.querySelector('#controlButtonsActive .button.primary');
-            if (btn) btn.disabled = true;
-
             // Draw random index from available wheel
             const idx = Math.floor(Math.random() * wheel.length);
             const winner = wheel[idx];
@@ -904,8 +1040,8 @@
             // Find which participant index this winner is
             const winnerParticipantIndex = participants.findIndex(p => p.name === winner.name);
 
-            // Animate wheel to show this winner at top
-            animateSpinToWinner(winnerParticipantIndex, () => {
+            // Animate slot machine to show this winner
+            spinSlotMachine(winnerParticipantIndex, () => {
                 // Only add winner AFTER animation is complete
                 currentDrawSession.drawsCompleted++;
                 currentDrawSession.winners.push({
@@ -921,68 +1057,11 @@
                 // Update UI
                 updateDrawStatus();
 
-                // Re-enable button
-                if (btn) btn.disabled = false;
-
                 if (currentDrawSession.drawsCompleted >= currentDrawSession.targetDraws) {
                     updateDrawUI('complete');
                     showMessage('drawMessage', `✅ Alle ${currentDrawSession.targetDraws} gevinst(er) trukket!`, 'success');
                 }
             });
-        }
-
-        function animateSpinToWinner(winnerParticipantIndex, callback) {
-            const duration = 2000;
-            const startTime = Date.now();
-            
-            // Create wheel to find all indices for this winner
-            const wheel = createLotteryWheel();
-            
-            // Find all indices of this winner in the wheel
-            const winnerIndices = [];
-            participants.forEach((p, pIdx) => {
-                if (pIdx === winnerParticipantIndex) {
-                    wheel.forEach((entry, wIdx) => {
-                        if (entry.name === p.name) {
-                            winnerIndices.push(wIdx);
-                        }
-                    });
-                }
-            });
-            
-            // Pick a random lodd of this winner
-            const selectedLodIndex = winnerIndices[Math.floor(Math.random() * winnerIndices.length)];
-            
-            // Calculate target rotation to place this lodd at top
-            // Each lodd takes up 360/wheel.length degrees
-            const sliceAngle = 360 / wheel.length;
-            const baseRotation = 720; // 2 full rotations minimum
-            
-            // The center of the lodd sector is at (selectedLodIndex + 0.5) * sliceAngle
-            // We want to rotate so the center is at the top (0 degrees)
-            // wheelRotation should be: 360 - ((selectedLodIndex + 0.5) * sliceAngle)
-            const lodCenter = (selectedLodIndex + 0.5) * sliceAngle;
-            const targetRotationDegrees = baseRotation + (360 - lodCenter);
-
-            function animate() {
-                const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const easeProgress = 1 - Math.pow(1 - progress, 3);
-                
-                wheelRotation = (targetRotationDegrees * easeProgress) * (Math.PI / 180);
-                drawWheel();
-
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    // Animation complete - final draw to show exact position
-                    wheelRotation = (targetRotationDegrees % 360) * (Math.PI / 180);
-                    drawWheel();
-                    if (callback) callback();
-                }
-            }
-
-            animate();
         }
 
         function updateDrawStatus() {
@@ -1032,8 +1111,7 @@
                 readyBtns.style.display = 'flex';
                 activeBtns.style.display = 'none';
                 completeBtns.style.display = 'none';
-                wheelRotation = 0;
-                drawWheel();
+                initSlotMachine();
             }
         }
 
