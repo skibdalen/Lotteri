@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpareBank 1 Lotteri</title>
     
-    <!-- SheetJS for Excel handling -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
-    <!-- FileSaver for download -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <!-- Better Excel handling -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@latest/dist/FileSaver.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
     
@@ -658,28 +657,61 @@
             reader.onload = function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
+                    
+                    // Check if XLSX is loaded
+                    if (typeof XLSX === 'undefined') {
+                        showMessage('drawMessage', 'Excel-biblioteket lastes. Prøv igjen.', 'error');
+                        return;
+                    }
+                    
                     const workbook = XLSX.read(data, { type: 'array' });
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                     const json = XLSX.utils.sheet_to_json(worksheet);
 
+                    if (!json || json.length === 0) {
+                        showMessage('drawMessage', 'Excel-filen er tom eller har ikke riktig format', 'error');
+                        return;
+                    }
+
                     participants = [];
+                    let imported = 0;
+                    
                     json.forEach(row => {
-                        const name = row['Navn'] || row['Name'] || row['navn'] || '';
-                        const email = row['E-post'] || row['Email'] || row['email'] || '';
-                        const tickets = parseInt(row['Antall lodd'] || row['Tickets'] || row['antall lodd'] || 1) || 1;
+                        // Try different column name variations
+                        const name = row['Navn'] || row['NAVN'] || row['navn'] || 
+                                    row['Name'] || row['NAME'] || row['name'] || '';
+                        const email = row['E-post'] || row['E-POST'] || row['e-post'] || 
+                                     row['Email'] || row['EMAIL'] || row['email'] || '';
+                        const ticketsRaw = row['Antall lodd'] || row['ANTALL LODD'] || row['antall lodd'] ||
+                                          row['Tickets'] || row['TICKETS'] || row['tickets'] || '1';
+                        const tickets = parseInt(ticketsRaw) || 1;
 
                         if (name && tickets > 0) {
-                            participants.push({ name: name.toString(), email: email.toString(), tickets });
+                            participants.push({ 
+                                name: String(name).trim(), 
+                                email: String(email).trim(), 
+                                tickets: tickets
+                            });
+                            imported++;
                         }
                     });
+
+                    if (imported === 0) {
+                        showMessage('drawMessage', 'Ingen gyldige deltakere funnet i Excel-filen', 'error');
+                        return;
+                    }
 
                     saveParticipants();
                     loadParticipants();
                     document.getElementById('excelFile').value = '';
-                    showMessage('drawMessage', `✓ Importert ${participants.length} deltakere!`, 'success');
+                    showMessage('drawMessage', `✓ Importert ${imported} deltaker(e)!`, 'success');
                 } catch (error) {
-                    showMessage('drawMessage', 'Feil ved lesing av Excel: ' + error.message, 'error');
+                    console.error('Excel import error:', error);
+                    showMessage('drawMessage', 'Feil ved lesing av Excel-fil. Sjekk format (må ha kolonnene: Navn, E-post, Antall lodd)', 'error');
                 }
+            };
+            reader.onerror = function() {
+                showMessage('drawMessage', 'Feil ved lesing av fil', 'error');
             };
             reader.readAsArrayBuffer(file);
         }
@@ -691,18 +723,24 @@
             }
 
             try {
-                const ws = XLSX.utils.json_to_sheet(
-                    participants.map(p => ({
-                        'Navn': p.name,
-                        'E-post': p.email,
-                        'Antall lodd': p.tickets
-                    }))
-                );
+                if (typeof XLSX === 'undefined') {
+                    showMessage('drawMessage', 'Excel-biblioteket lastes. Prøv igjen.', 'error');
+                    return;
+                }
+
+                const data = participants.map(p => ({
+                    'Navn': p.name,
+                    'E-post': p.email,
+                    'Antall lodd': p.tickets
+                }));
+
+                const ws = XLSX.utils.json_to_sheet(data);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, 'Deltakere');
                 XLSX.writeFile(wb, 'lotteri_deltakere.xlsx');
                 showMessage('drawMessage', '✓ Deltakere eksportert!', 'success');
             } catch (error) {
+                console.error('Export error:', error);
                 showMessage('drawMessage', 'Feil ved eksport: ' + error.message, 'error');
             }
         }
@@ -845,38 +883,46 @@
 
             const wheel = currentDrawSession.availableWheel;
             if (wheel.length === 0) {
-                showMessage('drawMessage', 'Ikke nok deltakere for flere treninger', 'error');
+                showMessage('drawMessage', 'Ikke nok deltakere for flere trekninger', 'error');
                 return;
             }
+
+            // Disable button during animation
+            const btn = document.querySelector('#controlButtonsActive .button.primary');
+            if (btn) btn.disabled = true;
 
             // Draw random index
             const idx = Math.floor(Math.random() * wheel.length);
             const winner = wheel[idx];
 
-            currentDrawSession.drawsCompleted++;
-            currentDrawSession.winners.push({
-                position: currentDrawSession.drawsCompleted,
-                name: winner.name,
-                email: winner.email,
-                tickets: participants.find(p => p.name === winner.name)?.tickets || 1
+            // Animate wheel - callback when done
+            animateSpin(winner, () => {
+                // Only add winner AFTER animation is complete
+                currentDrawSession.drawsCompleted++;
+                currentDrawSession.winners.push({
+                    position: currentDrawSession.drawsCompleted,
+                    name: winner.name,
+                    email: winner.email,
+                    tickets: participants.find(p => p.name === winner.name)?.tickets || 1
+                });
+
+                // Remove all tickets for this person
+                currentDrawSession.availableWheel = wheel.filter(w => w.name !== winner.name);
+
+                // Update UI
+                updateDrawStatus();
+
+                // Re-enable button
+                if (btn) btn.disabled = false;
+
+                if (currentDrawSession.drawsCompleted >= currentDrawSession.targetDraws) {
+                    updateDrawUI('complete');
+                    showMessage('drawMessage', `✅ Alle ${currentDrawSession.targetDraws} gevinst(er) trukket!`, 'success');
+                }
             });
-
-            // Remove all tickets for this person
-            currentDrawSession.availableWheel = wheel.filter(w => w.name !== winner.name);
-
-            // Animate wheel
-            animateSpin(winner);
-
-            // Update UI
-            updateDrawStatus();
-
-            if (currentDrawSession.drawsCompleted >= currentDrawSession.targetDraws) {
-                updateDrawUI('complete');
-                showMessage('drawMessage', `✅ Alle ${currentDrawSession.targetDraws} gevinst(er) trukket!`, 'success');
-            }
         }
 
-        function animateSpin(winner) {
+        function animateSpin(winner, callback) {
             const duration = 2000;
             const startTime = Date.now();
             const targetRotation = Math.random() * 360 + 720;
@@ -891,6 +937,10 @@
 
                 if (progress < 1) {
                     requestAnimationFrame(animate);
+                } else {
+                    // Animation complete
+                    drawWheel();
+                    if (callback) callback();
                 }
             }
 
@@ -1057,6 +1107,11 @@
             }
 
             try {
+                if (typeof XLSX === 'undefined') {
+                    showMessage('drawMessage', 'Excel-biblioteket lastes. Prøv igjen.', 'error');
+                    return;
+                }
+
                 const data = [];
                 history.forEach(entry => {
                     entry.winners.forEach((winner, idx) => {
@@ -1076,6 +1131,7 @@
                 XLSX.writeFile(wb, 'lotteri_historikk.xlsx');
                 showMessage('drawMessage', '✓ Historikk eksportert!', 'success');
             } catch (error) {
+                console.error('History export error:', error);
                 showMessage('drawMessage', 'Feil ved eksport: ' + error.message, 'error');
             }
         }
@@ -1112,7 +1168,26 @@
         // INITIALIZATION
         // ========================
 
+        function checkLibraries() {
+            const maxWait = 5000; // 5 seconds
+            const startTime = Date.now();
+            
+            const checkInterval = setInterval(() => {
+                if (typeof XLSX !== 'undefined') {
+                    clearInterval(checkInterval);
+                    console.log('✓ XLSX library loaded');
+                } else if (Date.now() - startTime > maxWait) {
+                    clearInterval(checkInterval);
+                    console.warn('⚠ XLSX library may not be available. Excel functions may not work.');
+                }
+            }, 100);
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Check if libraries are available
+            checkLibraries();
+            
+            // Load data
             loadParticipants();
             renderHistory();
             renderHistoryStats();
