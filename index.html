@@ -550,8 +550,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎰 Vinlotteri i Kongsberg</h1>
-            <p class="subtitle">Trekk dagens heldige vinnere</p>
+            <h1>🎰 SpareBank 1 Lotteri</h1>
+            <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
         </header>
 
         <div class="main-content">
@@ -602,7 +602,7 @@
 
             <!-- Senter: Lotterihjul -->
             <div class="card">
-                <h2>Trekkning</h2>
+                <h2>Lotterimaskin</h2>
                 <div class="machine-container">
                     <div class="machine-display">
                         <div class="slot-machine">
@@ -666,6 +666,9 @@
                 </button>
                 <button class="button secondary" style="margin-top: 8px; width: 100%;" onclick="importHistory()">
                     📤 Importer historikk (Excel)
+                </button>
+                <button class="button secondary" style="margin-top: 8px; width: 100%; color: #db3335; border-color: #db3335;" onclick="clearAllHistory()">
+                    🗑️ Slett all historikk
                 </button>
             </div>
 
@@ -1343,37 +1346,61 @@
 
         // Import historikk fra Excel
         function importHistory() {
+            // Sjekk at XLSX er lastet
+            if (typeof XLSX === 'undefined') {
+                showMessage('drawMessage', 'Excel-biblioteket lastes. Vennligst vent noen sekunder og prøv igjen.', 'error');
+                return;
+            }
+
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = '.xlsx,.xls';
+            input.accept = '.xlsx,.xls,.csv';
+            input.style.display = 'none';
+            document.body.appendChild(input);
             
             input.onchange = (e) => {
                 const file = e.target.files[0];
+                if (!file) return;
+
                 const reader = new FileReader();
+                
+                reader.onerror = () => {
+                    showMessage('drawMessage', 'Feil ved lesing av fil', 'error');
+                    console.error('FileReader error');
+                };
                 
                 reader.onload = (event) => {
                     try {
+                        console.log('Lesing Excel-fil:', file.name);
                         const data = new Uint8Array(event.target.result);
                         const workbook = XLSX.read(data, { type: 'array' });
+                        console.log('Workbook ark:', workbook.SheetNames);
+                        
                         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                         const rows = XLSX.utils.sheet_to_json(worksheet);
                         
+                        console.log('Leseste rader:', rows.length);
+                        
                         if (!rows || rows.length === 0) {
-                            showMessage('drawMessage', 'Excel-fil er tom', 'error');
+                            showMessage('drawMessage', 'Excel-fil er tom eller har feil format', 'error');
                             return;
                         }
 
-                        // Validér format - sjekk at nødvendige kolonner finnes
+                        // Validér format
                         const firstRow = rows[0];
+                        console.log('Første rad kolonner:', Object.keys(firstRow));
+                        
                         if (!firstRow['Dato'] || !firstRow['Vinner']) {
-                            showMessage('drawMessage', 'Excel-format er feil. Må ha "Dato" og "Vinner" kolonner', 'error');
+                            showMessage('drawMessage', 'Excel må ha "Dato" og "Vinner" kolonner. Fundne kolonner: ' + Object.keys(firstRow).join(', '), 'error');
                             return;
                         }
 
-                        // Grupér winners etter dato (sesjon)
+                        // Grupér winners etter dato
                         const sessionMap = {};
                         rows.forEach(row => {
-                            const dato = row['Dato'];
+                            const dato = String(row['Dato']).trim();
+                            if (!dato) return;
+                            
                             if (!sessionMap[dato]) {
                                 sessionMap[dato] = {
                                     date: dato,
@@ -1384,13 +1411,14 @@
                             
                             sessionMap[dato].winners.push({
                                 position: sessionMap[dato].winners.length + 1,
-                                name: row['Vinner'],
-                                email: row['E-post'] || '',
+                                name: String(row['Vinner']).trim(),
+                                email: String(row['E-post'] || '').trim(),
                                 tickets: parseInt(row['Antall lodd']) || 1
                             });
                         });
 
                         const importedHistory = Object.values(sessionMap);
+                        console.log('Importert sesjonor:', importedHistory.length);
 
                         // Spør om merge eller erstatte
                         const currentHistory = loadHistory();
@@ -1404,22 +1432,19 @@
                             );
                             
                             if (shouldMerge) {
-                                // Merge: kombinér
                                 const merged = [...currentHistory, ...importedHistory];
                                 saveHistory(merged);
                                 showMessage('drawMessage', `✅ ${importedHistory.length} nye sesjon(er) lagt til (${merged.length} totalt)`, 'success');
                             } else {
-                                // Erstatt
                                 saveHistory(importedHistory);
                                 showMessage('drawMessage', `✅ ${importedHistory.length} sesjon(er) importert (gamle slettet)`, 'success');
                             }
                         } else {
-                            // Ingen historikk, bare lagre
                             saveHistory(importedHistory);
                             showMessage('drawMessage', `✅ ${importedHistory.length} sesjon(er) importert`, 'success');
                         }
                         
-                        loadHistory(); // Refresh historikk display
+                        loadHistory();
                         
                     } catch (error) {
                         console.error('Import error:', error);
@@ -1427,7 +1452,46 @@
                     }
                 };
                 
-                input.click();
+                reader.readAsArrayBuffer(file);
+            };
+            
+            input.click();
+        }
+
+        // Slett all historikk
+        function clearAllHistory() {
+            try {
+                const history = loadHistory();
+                console.log('Historikk funnet:', history.length, 'sesjonor');
+                
+                if (!history || history.length === 0) {
+                    showMessage('drawMessage', 'Ingen historikk å slette', 'info');
+                    return;
+                }
+
+                const totalWinners = history.reduce((sum, s) => sum + (s.winners ? s.winners.length : 0), 0);
+                
+                const confirmed = confirm(
+                    `⚠️ ADVARSEL: Slett all historikk?\n\n` +
+                    `Antall sesjonor: ${history.length}\n` +
+                    `Totalt vinnere: ${totalWinners}\n\n` +
+                    `DETTE KAN IKKE ANGRES!\n\n` +
+                    `Klikk OK for å slette, eller Avbryt for å behold`
+                );
+
+                if (confirmed) {
+                    console.log('Sletter historikk...');
+                    localStorage.removeItem(STORAGE_HISTORY);
+                    console.log('Historikk slettet');
+                    showMessage('drawMessage', '✅ All historikk slettet', 'success');
+                    loadHistory(); // Refresh display
+                } else {
+                    console.log('Sletting avbrutt av bruker');
+                    showMessage('drawMessage', 'Sletting avbrutt', 'info');
+                }
+            } catch (error) {
+                console.error('Feil ved sletting:', error);
+                showMessage('drawMessage', 'Feil ved sletting: ' + error.message, 'error');
             }
         }
 
