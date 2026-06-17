@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vinlotteri</title>
+    <title>SpareBank 1 Lotteri</title>
     
     <!-- Better Excel handling -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.full.min.js"></script>
@@ -550,8 +550,31 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎰 Vinlotteri i Kongsberg</h1>
-            <p class="subtitle">Trekk dagens heldige vinnere</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div>
+                    <h1>🎰 SpareBank 1 Lotteri</h1>
+                    <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
+                </div>
+                <a href="README.md" target="_blank" title="Åpne brukerveiledning" style="
+                    background: var(--ffe-farge-vann);
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    width: 48px;
+                    height: 48px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 24px;
+                    cursor: pointer;
+                    text-decoration: none;
+                    transition: background 0.2s;
+                    flex-shrink: 0;
+                    margin-left: 20px;
+                " onmouseover="this.style.background='#004080'" onmouseout="this.style.background='var(--ffe-farge-vann)'">
+                    ?
+                </a>
+            </div>
         </header>
 
         <div class="main-content">
@@ -602,7 +625,7 @@
 
             <!-- Senter: Lotterihjul -->
             <div class="card">
-                <h2>Trekning</h2>
+                <h2>Lotterimaskin</h2>
                 <div class="machine-container">
                     <div class="machine-display">
                         <div class="slot-machine">
