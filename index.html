@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vinlotteri</title>
+    <title>SpareBank 1 Lotteri</title>
     
     <!-- Better Excel handling -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.full.min.js"></script>
@@ -550,8 +550,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎰 Vinlotteri i Kongsberg</h1>
-            <p class="subtitle">Trekk dagens heldige vinnere</p>
+            <h1>🎰 SpareBank 1 Lotteri</h1>
+            <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
         </header>
 
         <div class="main-content">
@@ -663,6 +663,9 @@
                 </div>
                 <button class="button secondary" style="margin-top: 16px; width: 100%;" onclick="downloadHistory()">
                     📥 Last ned historikk (Excel)
+                </button>
+                <button class="button secondary" style="margin-top: 8px; width: 100%;" onclick="importHistory()">
+                    📤 Importer historikk (Excel)
                 </button>
             </div>
 
@@ -1335,6 +1338,96 @@
             } catch (error) {
                 console.error('History export error:', error);
                 showMessage('drawMessage', 'Feil ved eksport: ' + error.message, 'error');
+            }
+        }
+
+        // Import historikk fra Excel
+        function importHistory() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx,.xls';
+            
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = (event) => {
+                    try {
+                        const data = new Uint8Array(event.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const rows = XLSX.utils.sheet_to_json(worksheet);
+                        
+                        if (!rows || rows.length === 0) {
+                            showMessage('drawMessage', 'Excel-fil er tom', 'error');
+                            return;
+                        }
+
+                        // Validér format - sjekk at nødvendige kolonner finnes
+                        const firstRow = rows[0];
+                        if (!firstRow['Dato'] || !firstRow['Vinner']) {
+                            showMessage('drawMessage', 'Excel-format er feil. Må ha "Dato" og "Vinner" kolonner', 'error');
+                            return;
+                        }
+
+                        // Grupér winners etter dato (sesjon)
+                        const sessionMap = {};
+                        rows.forEach(row => {
+                            const dato = row['Dato'];
+                            if (!sessionMap[dato]) {
+                                sessionMap[dato] = {
+                                    date: dato,
+                                    drawId: new Date(dato).getTime(),
+                                    winners: []
+                                };
+                            }
+                            
+                            sessionMap[dato].winners.push({
+                                position: sessionMap[dato].winners.length + 1,
+                                name: row['Vinner'],
+                                email: row['E-post'] || '',
+                                tickets: parseInt(row['Antall lodd']) || 1
+                            });
+                        });
+
+                        const importedHistory = Object.values(sessionMap);
+
+                        // Spør om merge eller erstatte
+                        const currentHistory = loadHistory();
+                        if (currentHistory.length > 0) {
+                            const shouldMerge = confirm(
+                                `📊 Eksisterende historikk: ${currentHistory.length} sesjon(er)\n` +
+                                `📥 Importeres: ${importedHistory.length} sesjon(er)\n\n` +
+                                `Velg handling:\n` +
+                                `✓ OK = Slå sammen (legg til nye)\n` +
+                                `✗ Avbryt = Erstatt (slett gamle)`
+                            );
+                            
+                            if (shouldMerge) {
+                                // Merge: kombinér
+                                const merged = [...currentHistory, ...importedHistory];
+                                saveHistory(merged);
+                                showMessage('drawMessage', `✅ ${importedHistory.length} nye sesjon(er) lagt til (${merged.length} totalt)`, 'success');
+                            } else {
+                                // Erstatt
+                                saveHistory(importedHistory);
+                                showMessage('drawMessage', `✅ ${importedHistory.length} sesjon(er) importert (gamle slettet)`, 'success');
+                            }
+                        } else {
+                            // Ingen historikk, bare lagre
+                            saveHistory(importedHistory);
+                            showMessage('drawMessage', `✅ ${importedHistory.length} sesjon(er) importert`, 'success');
+                        }
+                        
+                        loadHistory(); // Refresh historikk display
+                        
+                    } catch (error) {
+                        console.error('Import error:', error);
+                        showMessage('drawMessage', 'Feil ved import: ' + error.message, 'error');
+                    }
+                };
+                
+                input.click();
             }
         }
 
