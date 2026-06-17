@@ -1,333 +1,336 @@
-# 🎰 SpareBank 1 Lotteri - HTML Versjon
+# 🎰 SpareBank 1 Vinlotteri
 
-En moderne lotteri-applikasjon **100% kjørt i nettleseren** - ingen installasjon eller backend nødvendig!
+En elegant og pålitelig lotterimaskin for trekning av vinnere med korrekt sannsynlighetsfordeling basert på antall lodd.
 
-![Lisens](https://img.shields.io/badge/Lisens-MIT-green?style=flat-square)
-![HTML5](https://img.shields.io/badge/HTML5-100%25-E34C26?style=flat-square)
-![Responsive](https://img.shields.io/badge/Responsive-Mobile%2B%2B-blue?style=flat-square)
+**✨ Designet med SpareBank 1 FFE design system**
 
 ---
 
-## 🚀 Kjør nå
+## 📋 Innholdsfortegnelse
 
-### **Lokalt (raskest)**
-1. Last ned `index.html`
-2. Dobbeltklikk på filen → åpnes i nettleseren
-3. **Done!** Ingen installasjon needed
-
-### **Fra GitHub Pages**
-https://ditt-brukernavn.github.io/Vinlotteri/
-
-(Erstatt `ditt-brukernavn` med din GitHub-bruker)
+1. [Funksjoner](#-funksjoner)
+2. [Rask start](#-rask-start)
+3. [Deltakere](#-deltakere)
+4. [Trekninger](#-trekninger)
+5. [Historikk](#-historikk)
+6. [Tekniske detaljer](#-tekniske-detaljer)
 
 ---
 
 ## ✨ Funksjoner
 
-✅ **Sekvensielle trekninger** - trekk en vinner av gangen  
-✅ **Animert lotterihjul** - visuelt tiltalende spinning  
-✅ **Automatisk historikk** - alle trekninger lagres lokalt  
-✅ **Statistikk** - se hvor ofte hver person vinner  
-✅ **Excel-import/eksport** - les fra og eksporter til Excel  
-✅ **SpareBank 1 design** - profesjonell UI  
-✅ **Ingen backend** - rent JavaScript, 100% offline capable  
-✅ **LocalStorage** - data lagres i nettleseren  
+### 🎲 Trekninger
+- **Slot Machine animasjon** med farger som spinner
+- **Korrekt sannsynlighet** basert på antall lodd
+- **Maks 2 seire per person** per trekningsesjon
+- **Live sannsynlighets-display** som oppdateres etter hver trekning
+
+### 👥 Deltakere
+- Legg til navn, e-post og antall lodd
+- Importer/eksporter fra Excel
+- Vis sannsynlighet i % for hver deltaker
+- Enkel sletting av deltakere
+
+### 📊 Historikk
+- Automatisk registrering av alle trekninger
+- Eksporter til Excel-fil
+- Importer gammel historikk
+- Merge eller erstatt ved import
+- Statistikk per person
+- Slett all historikk med sikker confirmation
+
+### 💾 Data
+- Alt lagres lokalt i nettleseren (localStorage)
+- Ingen servere, ingen loggføring
+- Du kontrollerer all data
 
 ---
 
-## 📖 Bruk
+## 🚀 Rask start
 
-### 1. Legg til deltakere
-
-**Alternativ A: Manuell**
-- Skriv navn (påkrevd)
-- E-post (valgfritt)
-- Antall lodd (hvor mange ganger de kan vinne)
-- Klikk "Legg til deltaker"
-
-**Alternativ B: Importer Excel**
-- Klikk "Importer" fanen
-- Velg Excel-fil (må ha kolonnene: Navn, E-post, Antall lodd)
-- Data importeres automatisk
-
-### 2. Start trekningssesjon
-
-1. Skriv antall priser (f.eks. "3")
-2. Klikk "Start trekningssesjon"
-3. Status vises: "0 / 3"
-
-### 3. Trekk vinnere - en og en
-
+### Online (GitHub Pages)
 ```
-Klikk "Trekk neste vinner"
-    ↓
-Hjulet spinner i 2 sekunder
-    ↓
-Vinner vises både på hjul + liste
-    ↓
-Status: "1 / 3"
-    ↓
-Gjenta til alle er trukket
+1. Åpne: https://brukernavn.github.io/Vinlotteri/
+2. Appen laster automatisk
+3. Start med "Legg til deltaker"
 ```
 
-### 4. Lagre resultatet
-
-Når alle er trukket:
-- Klikk "💾 Lagre vinnere"
-- Lagres lokalt i nettleseren
-- Oppdateres i historikk-fanen
-
-### 5. Se historikk & statistikk
-
-**Historikk-fanen:**
-- Se alle tidligere trekninger med dato
-- Hvem vant når
-
-**Statistikk-fanen:**
-- Hvor mange ganger hver person har vunnet
-- Sortert etter gevinster
-
-**Eksport:**
-- Klikk "Last ned historikk (Excel)"
-- Fil `lotteri_historikk.xlsx` lastes ned
+### Lokalt (din datamaskin)
+```
+1. Last ned index.html
+2. Dobbeltklikk på filen
+3. Appen åpnes i nettleseren
+4. Alt fungerer offline! ✅
+```
 
 ---
 
-## 💾 Datahåndtering
+## 👥 Deltakere
+
+### Legg til manuelt
+
+**Steg:**
+1. Gå til "Deltakere" fanen
+2. Fyll inn:
+   - **Navn** - Deltakerens navn
+   - **E-post** - Valgfritt
+   - **Antall lodd** - Hvor mange lodd de har
+3. Klikk "Legg til"
+
+**Eksempel:**
+```
+Navn: Frank Hansen
+E-post: frank@example.com
+Antall lodd: 90
+```
+
+### Importer fra Excel
+
+**Forberedelse - lag Excel-fil:**
+
+| Navn | E-post | Antall lodd |
+|---|---|---|
+| Frank Hansen | frank@example.com | 90 |
+| Kari Dahl | kari@example.com | 10 |
+| Ole Petter | ole@example.com | 50 |
+
+**Import:**
+1. Klikk "Importer fra fil"
+2. Velg Excel-filen (.xlsx eller .xls)
+3. Deltakerne legges til automatisk
+
+**Kolonnenavnene må være nøyaktig:**
+- `Navn`
+- `E-post`
+- `Antall lodd`
+
+---
+
+## 🎲 Trekninger
+
+### Start ny trekningsesjon
+
+**Steg:**
+1. Gå til "Trekning" fanen
+2. Fyll inn "Antall trekninger" - hvor mange vinnere du vil ha
+3. Klikk "Start trekningsesjon"
+
+**Eksempel:**
+```
+Deltakere: Frank (90 lodd), Kari (10 lodd)
+Antall trekninger: 3
+```
+
+### Kjør trekning
+
+**For hver trekning:**
+1. Klikk "Trekk neste vinner"
+2. Slot machine spinner 2 sekunder
+3. Vinnernavn vises i maskinen
+4. Vinner legges automatisk i lista
+
+**Sannsynlighet:** Basert på antall lodd
+```
+Frank: 90/100 = 90% sjanse
+Kari: 10/100 = 10% sjanse
+```
+
+### Regler
+
+- **Maks 2 seire per person** per sesjon
+- Etter 2. seier: 0% sjanse (utestengt)
+- Resten av loddene fordeles på andre
+
+**Eksempel:**
+```
+Trekning 1: Frank vinner (90%)
+Trekning 2: Frank vinner igjen (89% - ett lodd mindre)
+Trekning 3: Frank er utestengt (0%) - kun Kari kan vinne
+```
+
+### Lagre eller avbryt
+
+**Når ferdig:**
+- ✅ **Lagre vinnere** - Lagrer til historikk
+- ❌ **Avbryt** - Sletter, ingen lagring
+- 🔄 **Ny sesjon** - Starter ny trekning
+
+---
+
+## 📊 Historikk
+
+### Vis historikk
+
+**Fanen "Historikk"** viser alle tidligere trekninger:
+- Dato og tid
+- Posisjon (1., 2., osv)
+- Vinnernavn
+- E-post
+- Antall lodd
+
+### Eksporter til Excel
+
+**Steg:**
+1. Gå til "Historikk" fanen
+2. Klikk "📥 Last ned historikk (Excel)"
+3. Excel-fil lastes ned: `lotteri_historikk.xlsx`
+
+**Innholdet:**
+```
+| Dato | Prisnummer | Vinner | E-post | Antall lodd |
+|---|---|---|---|---|
+| 17.06.2026 13:45 | 1 | Frank | frank@... | 90 |
+```
+
+### Importer historikk
+
+**Fra gammel Excel-fil:**
+1. Klikk "📤 Importer historikk (Excel)"
+2. Velg Excel-filen
+3. Velg handling:
+   - **Merge** = Legg til nye trekninger
+   - **Erstatt** = Slett gamle, bruk kun nye
+4. Historikk gjenopprettes ✅
+
+**Excel-format må ha:**
+- `Dato` kolonne
+- `Vinner` kolonne
+- Andre kolonner: `Prisnummer`, `E-post`, `Antall lodd`
+
+### Statistikk
+
+**Fanen "Statistikk"** viser:
+- Antall seiere per person
+- Seiere i gjeldende sesjon
+- Historiske tall
+
+### Slett all historikk
+
+**Steg:**
+1. Klikk "🗑️ Slett all historikk"
+2. Confirmation dialog dukker opp
+3. Klikk OK for å slette
+4. ⚠️ **DETTE KAN IKKE ANGRES!**
+
+**Tips:** Eksporter til Excel først som sikkerhetskopi! 📥
+
+---
+
+## 💾 Data & Sikkerhet
 
 ### Hvor lagres data?
 
-**Deltakere:**
-- Lagres i `localStorage` (nettleseren)
-- Kan importeres/eksporteres som Excel
-
-**Historikk:**
-- Lagres i `localStorage` (nettleseren)
-- Kan eksporteres som Excel
-- **Slettes hvis du tømmer nettleserkake** (Clear Browser Data)
-
-### Backup av data
-
+**Alt lagres lokalt i nettleseren:**
 ```
-1. Gå til "Trekkings-historikk"
-2. Klikk "Last ned historikk (Excel)"
-3. Fil lagres på PC
-4. Sikkerhetskopi av all data!
+localStorage:
+  - vinlotteri_participants (deltakere)
+  - vinlotteri_history (historikk)
 ```
+
+**Fordelene:**
+- ✅ Ingen server - fullt privat
+- ✅ Fungerer offline
+- ✅ Ingen loggføring
+- ✅ Du kontrollerer alt
+
+### Sikkerhetskopi
+
+**Anbefalt workflow:**
+```
+1. Gjør trekninger
+2. Lagre sesjon
+3. Eksporter historikk (Excel)
+4. Lagre Excel-fil på datamaskinen
+5. Kan nå slette alt fra appen hvis du vil
+6. Importer senere hvis nødvendig
+```
+
+### Data som slettes
+
+**"Slett all historikk" sletter KUN:**
+- Trekningshistorikk
+
+**BEVARES:**
+- Deltakerlisten
+- Data fra andre apper/nettsteder
 
 ---
 
-## 🌐 GitHub Pages Setup
+## 🔧 Tekniske detaljer
 
-### 1. Lag repository på GitHub
+### Krav
+- Moderne nettleser (Chrome, Firefox, Safari, Edge)
+- JavaScript aktivert
+- Internett (første gang) - fungerer offline etterpå
 
-```bash
-# Lag repo på GitHub.com
-# Navn: Vinlotteri
-# Public
-```
-
-### 2. Pushe koden
-
-```bash
-cd Vinlotteri
-git init
-git add index.html README.md .gitignore
-git commit -m "Init: SpareBank 1 Lottery HTML app"
-git remote add origin https://github.com/DIN-BRUKERNAVN/Vinlotteri.git
-git branch -M main
-git push -u origin main
-```
-
-### 3. Aktiver GitHub Pages
-
-1. Gå til Settings på GitHub-repo
-2. Klikk "Pages" (venstre meny)
-3. Source: `main` branch → `/root`
-4. Save
-
-**URL blir:** `https://DIN-BRUKERNAVN.github.io/Vinlotteri/`
-
----
-
-## 🔒 Sikkerhet & Privacy
-
-✅ **100% offline** - alt kjøres i nettleseren  
-✅ **Ingen data sendes til server** - alt lagres lokalt  
-✅ **Åpent kildekode** - kode kan inspekteres  
-✅ **Ingen sporing** - ingen analytics eller cookies  
-
----
-
-## 🛠 Teknisk Info
-
-### Stack
-- **Frontend:** HTML5 + CSS3 + Vanilla JavaScript
-- **Excel:** SheetJS (xlsx library)
-- **Data:** Browser localStorage
-- **Hosting:** GitHub Pages (gratis!)
-
-### Avhengigheter (fra CDN)
-- SheetJS v0.18.5 (Excel-lesing/skriving)
-- FileSaver.js (Download-funksjonalitet)
-- Source Sans 3 font (Google Fonts)
+### Biblioteker
+- **SheetJS** - Excel import/export
+- **FileSaver** - Fil-download
+- **SpareBank 1 FFE Design System** - Styling
 
 ### Nettleser-kompatibilitet
-✅ Chrome/Chromium (✓✓✓)
-✅ Firefox (✓✓✓)
-✅ Safari (✓✓)
-✅ Edge (✓✓✓)
+- ✅ Chrome 90+
+- ✅ Firefox 88+
+- ✅ Safari 14+
+- ✅ Edge 90+
 
----
-
-## 📝 Filstruktur
-
+### Filer
 ```
-Vinlotteri/
-├── index.html          # Hele applikasjonen (en fil!)
-├── README.md           # Denne filen
-├── .gitignore         # Git rules
-└── LICENSE            # MIT License
-```
-
-**Det er det!** Bare en HTML-fil + readme!
-
----
-
-## ⚙️ Lokalt oppsett
-
-### Windows
-```
-1. Last ned index.html
-2. Dobbeltklikk
-3. Vips! 🎉
-```
-
-### macOS / Linux
-```
-1. Last ned index.html
-2. Åpne i nettleser (eller: open index.html)
-3. Vips! 🎉
-```
-
-### Eller via GitHub
-```bash
-git clone https://github.com/DIN-BRUKERNAVN/Vinlotteri.git
-cd Vinlotteri
-# Åpne index.html i nettleseren
+index.html          Hele appen (alt-i-en fil)
+README.md          Denne dokumentasjonen
 ```
 
 ---
 
-## 🐛 Feilsøking
+## ❓ Vanlige spørsmål
 
-**Problemet: Data forsvinner når jeg lukker nettleseren**
-- Dette er normalt! localStorage er sessjonbasert
-- Løsning: Eksporter til Excel regelmessig
+### Hva hvis jeg lukker nettleseren?
+**Data bevares!** Alt lagres i localStorage.
 
-**Problemet: Excel-import fungerer ikke**
-- Sjekk at Excel-filen har riktig format
-- Kolonnenavn må være: Navn, E-post, Antall lodd
-- Eller: Bruk .xlsx format (ikke .xls)
+### Kan jeg bruke appen offline?
+**JA!** Etter første lasting fungerer den helt offline.
 
-**Problemet: Kan ikke åpne fra File:// (lokal)**
-- Nettlesere blokkerer CORS for fil-protokollen
-- Løsning: Bruk GitHub Pages eller lokal webserver
-  ```bash
-  # Python 3
-  python -m http.server 8000
-  # Så åpne http://localhost:8000/index.html
-  ```
+### Hvor mange deltakere kan jeg ha?
+**Ubegrenset!** Avhenger av nettleserminne (typisk 1000+).
 
-**Problemet: Kan ikke åpne fra GitHub Pages**
-- Sjekk at Settings → Pages er aktivert
-- URL: `https://brukernavn.github.io/Vinlotteri/`
-- Wait 1-2 minutter etter første push
+### Hvordan sikrer jeg data?
+**Eksporter til Excel!** Gjør det før du sletter noe.
 
----
+### Kan jeg dele appen med andre?
+**JA!** Lag en GitHub Pages eller del HTML-filen.
 
-## 💡 Tips
-
-### Bruk med hele gruppen
-```
-1. Del GitHub Pages link
-2. Alle åpner samme URL
-3. Hver PC har sin egen localStorage (uavhengig data)
-4. Del resultater via eksportert Excel
-```
-
-### Backup-rutine
-```
-1. Hver dag: "Last ned historikk"
-2. Lag mappe: Lotteri_Backups/
-3. Gi navn: historikk_2025-01-15.xlsx
-4. Data sikret! 💪
-```
-
-### Tilpass deltakere
-```
-Hver trekningssesjon:
-1. Slett forrige deltakere ("Slett alle")
-2. Importer ny Excel-fil
-3. Eller legg til manuelt
-4. Start trening
-```
-
----
-
-## 📊 Eksempel: Ledersamling
-
-```
-Scenario: 5 personer, 3 priser
-
-1. Importer Excel med 5 deltakere
-2. Skriv "3" (3 priser)
-3. Klikk "Start trekningssesjon"
-4. Trekk vinner 1 → Ole Petter 🎉
-5. Trekk vinner 2 → Anna 🎉
-6. Trekk vinner 3 → Kari 🎉
-7. Klikk "Lagre vinnere"
-8. Klikk "Last ned historikk"
-9. Send Excel-fil til alle 📧
-```
-
----
-
-## 🎨 Anpass design
-
-Vil du endre farger?
-
-Åpne `index.html` og rediger disse linjene (toppen av `<style>`):
-
-```css
---ffe-farge-fjell: #002776;      /* Primær blå */
---ffe-farge-vann: #005aa4;       /* Knapp blå */
---ffe-farge-skog: #00754e;       /* Grønn */
-```
-
----
-
-## 📄 Lisens
-
-MIT License - Se LICENSE fil
-
----
-
-## 🤝 Bidrag
-
-Har du ideer? Lag en Pull Request!
+### Hva hvis jeg gjør en feil?
+**Importer historikk fra Excel-backup!** 📥
 
 ---
 
 ## 📞 Support
 
-**Spørsmål?**
-1. Sjekk FAQ over
-2. Åpne GitHub Issue
-3. Sjekk browser console (F12) for feil
+Hvis noe ikke fungerer:
+1. Åpne Developer Console (F12)
+2. Gå til "Console" tab
+3. Se på feilmeldingene
+4. Prøv å laste siden på nytt
 
 ---
 
-**Laget med ❤️ for SpareBank 1**
+## 📝 Versjon
 
-Gjør lotering gøy! 🎉
+**Vinlotteri v1.0**
+- Slot machine animasjon
+- Korrekt sannsynlighet
+- Excel import/export
+- Historikk-styring
+
+---
+
+## 🎨 Design
+
+Designet med **SpareBank 1 FFE design system**:
+- Farge: Navy (#002776), Blå (#005aa4)
+- Typografi: Source Sans 3
+- Komponenter: Buttons, Cards, Forms
+
+---
+
+Lykke til med trekningen! 🎉
