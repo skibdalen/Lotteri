@@ -88,6 +88,14 @@ Antall lodd: 90
 
 **Forberedelse - lag Excel-fil:**
 
+**Obligatoriske kolonner:**
+| Navn | Antall lodd |
+|---|---|
+| Frank Hansen | 90 |
+| Kari Dahl | 10 |
+| Ole Petter | 50 |
+
+**Eller med E-post (valgfritt):**
 | Navn | E-post | Antall lodd |
 |---|---|---|
 | Frank Hansen | frank@example.com | 90 |
@@ -99,10 +107,12 @@ Antall lodd: 90
 2. Velg Excel-filen (.xlsx eller .xls)
 3. Deltakerne legges til automatisk
 
-**Kolonnenavnene må være nøyaktig:**
-- `Navn`
-- `E-post`
-- `Antall lodd`
+**Påkrevde kolonner:**
+- `Navn` ✅
+- `Antall lodd` ✅
+
+**Valgfrie kolonner:**
+- `E-post` (kan utelates)
 
 ---
 

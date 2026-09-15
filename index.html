@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vinlotteri Kongsberg</title>
+    <title>SpareBank 1 Lotteri</title>
     
     <!-- Better Excel handling -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.full.min.js"></script>
@@ -553,8 +553,8 @@
         <header>
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <div>
-                    <h1>🎰 Vinlotteri</h1>
-                    <p class="subtitle">Trekk vinnere</p>
+                    <h1>🎰 SpareBank 1 Lotteri</h1>
+                    <p class="subtitle">Trekk vinnerne en og en med animert lotterihjul</p>
                 </div>
                 <a href="README.md" target="_blank" title="Åpne brukerveiledning" style="
                     background: var(--ffe-farge-vann);
@@ -965,6 +965,58 @@
         }
 
         // ========================
+        // STRATIFIED SAMPLING
+        // 100% MATEMATISK NØYAKTIGHET
+        // ========================
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function createStratifiedDrawingPlan(numberOfDrawings) {
+            const drawingPlan = [];
+            const remainders = [];
+            const totalTickets = participants.reduce((sum, p) => sum + p.tickets, 0);
+            
+            // Beregn base-vinnere og rester for hver deltaker
+            participants.forEach((p) => {
+                const exactWins = (p.tickets / totalTickets) * numberOfDrawings;
+                const baseWins = Math.floor(exactWins);
+                const remainder = exactWins - baseWins;
+                
+                // Legg til base-vinnere til planen
+                for (let i = 0; i < baseWins; i++) {
+                    drawingPlan.push({ name: p.name, email: p.email });
+                }
+                
+                // Lagre rest hvis det er noen
+                if (remainder > 0) {
+                    remainders.push({ name: p.name, email: p.email, remainder });
+                }
+            });
+            
+            // Sorter rester etter størrelse (Largest Remainder Method)
+            remainders.sort((a, b) => b.remainder - a.remainder);
+            
+            // Legg til gjenværende vinnere
+            const remaining = numberOfDrawings - drawingPlan.length;
+            for (let i = 0; i < remaining; i++) {
+                drawingPlan.push({
+                    name: remainders[i].name,
+                    email: remainders[i].email
+                });
+            }
+            
+            // Shuffle for å se tilfeldig ut
+            return shuffleArray(drawingPlan);
+        }
+
+        // ========================
         // SLOT MACHINE
         // ========================
 
@@ -1097,16 +1149,20 @@
                 return;
             }
 
+            // Opprett stratifisert treningsplan (100% nøyaktighet)
+            const prePlannedDrawings = createStratifiedDrawingPlan(numDraws);
+
             currentDrawSession = {
                 targetDraws: numDraws,
                 drawsCompleted: 0,
                 winners: [],
-                availableWheel: wheel.slice()
+                availableWheel: wheel.slice(),
+                prePlannedDrawings: prePlannedDrawings  // 100% nøyaktig plan
             };
 
             initSlotMachine();
             updateDrawUI();
-            showMessage('drawMessage', `✓ Trekningssesjon startet. Totalt ${numDraws} gevinst(er) å trekke.`, 'info');
+            showMessage('drawMessage', `✓ Trekningssesjon startet. Totalt ${numDraws} gevinst(er) å trekke. (100% nøyaktighet)`, 'info');
         }
 
         function drawNextWinner() {
@@ -1114,33 +1170,8 @@
                 return;
             }
 
-            // Sjekk hvilke personer som har vunnet 2 ganger og fjern deres lodd
-            const winCounts = {};
-            currentDrawSession.winners.forEach(winnerRecord => {
-                if (!winCounts[winnerRecord.name]) {
-                    winCounts[winnerRecord.name] = 0;
-                }
-                winCounts[winnerRecord.name]++;
-            });
-
-            // Start med alle tilgjengelige lodd
-            let workingWheel = currentDrawSession.availableWheel.slice();
-            
-            // Fjern ALLE lodd for personer som har vunnet 2 ganger
-            Object.keys(winCounts).forEach(name => {
-                if (winCounts[name] >= 2) {
-                    workingWheel = workingWheel.filter(w => w.name !== name);
-                }
-            });
-
-            if (workingWheel.length === 0) {
-                showMessage('drawMessage', 'Ikke nok deltakere for flere trekninger', 'error');
-                return;
-            }
-
-            // Draw random index - hver lodd har lik sjanse
-            const idx = Math.floor(Math.random() * workingWheel.length);
-            const winner = workingWheel[idx];
+            // Hent vinner fra pre-planlagte liste (100% nøyaktig)
+            const winner = currentDrawSession.prePlannedDrawings[currentDrawSession.drawsCompleted];
             
             // Find which participant index this winner is
             const winnerParticipantIndex = participants.findIndex(p => p.name === winner.name);
@@ -1159,22 +1190,12 @@
                     tickets: participants.find(p => p.name === winner.name)?.tickets || 1
                 });
 
-                // Fjern ETT lodd for vinneren (reduserer sjansen deres neste trekning)
-                let removed = false;
-                currentDrawSession.availableWheel = currentDrawSession.availableWheel.filter(w => {
-                    if (!removed && w.name === winner.name) {
-                        removed = true;  // Fjern bare første forekomst
-                        return false;
-                    }
-                    return true;
-                });
-
                 // Update UI
                 updateDrawStatus();
 
                 if (currentDrawSession.drawsCompleted >= currentDrawSession.targetDraws) {
                     updateDrawUI('complete');
-                    showMessage('drawMessage', `✅ Alle ${currentDrawSession.targetDraws} gevinst(er) trukket!`, 'success');
+                    showMessage('drawMessage', `✅ Alle ${currentDrawSession.targetDraws} gevinst(er) trukket! (100% matematisk nøyaktig fordeling)`, 'success');
                 }
             });
         }
